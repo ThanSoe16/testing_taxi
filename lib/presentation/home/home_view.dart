@@ -30,7 +30,7 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   Position? _position;
   LocationModel locationModel = LocationModel();
-  bool isFirstTime = true;
+  bool isSwitched = false;
   Timer? _timer;
   String text = "Start Background Service";
   String _token = '';
@@ -138,6 +138,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   }
 
   void handleSetLocation() async {
+    _getCurrentLocation();
     if (locationModel.latitude != null) {
       Provider.of<LocationRepository>(context, listen: false)
           .setLocation(locationModel, _token)
@@ -154,21 +155,17 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   }
 
   void every30Second() async {
-    if (isFirstTime) {
-      handleSetLocation();
-      setState(() {
-        isFirstTime = false;
-      });
-      every30Second();
-    } else {
-      _timer = Timer.periodic(
-          const Duration(seconds: 30), (Timer t) => {handleSetLocation()});
-    }
+    handleSetLocation();
+    _timer = Timer.periodic(
+        const Duration(seconds: 30), (Timer t) => {handleSetLocation()});
+    setState(() {
+      isSwitched = false;
+    });
   }
 
   void handleEndLocation() async {
     setState(() {
-      isFirstTime = true;
+      isSwitched = true;
       _timer?.cancel();
     });
   }
@@ -178,7 +175,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         context: context,
         builder: (_) => TestingDialog(
             context: context,
-            message: "Successful set Location",
+            message: "Successful set Location \n $_position",
             type: Constants.success));
   }
 
@@ -194,6 +191,22 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   void handleBGService(bool value) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     preferences.setBool(Constants.prefsBGService, value) ?? '';
+  }
+
+  void toggleSwitch(bool value) {
+    handleSwitch(value);
+    setState(() {
+      isSwitched = value;
+    });
+
+  }
+
+  void handleSwitch(bool value){
+    if(value){
+      every30Second();
+    }else{
+      handleEndLocation();
+    }
   }
 
   @override
@@ -216,34 +229,26 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               const SizedBox(
                 height: AppSize.s10,
               ),
-              TestingBtn(
-                text: "Set Location",
-                onPressed: _getCurrentLocation,
-                color: ColorManager.primary,
+              const SizedBox(
+                height: AppSize.s20,
+              ),
+              Transform.scale(
+                scale: isSwitched ? 3 : 2,
+                child: Switch(
+                  value: isSwitched,
+                  onChanged: toggleSwitch,
+                  activeColor: ColorManager.primary,
+                  activeTrackColor: ColorManager.primaryOpacity70,
+                  inactiveThumbColor: ColorManager.darkGrey,
+                  inactiveTrackColor: ColorManager.grey1,
+                ),
               ),
               const SizedBox(
                 height: AppSize.s20,
               ),
-              TestingBtn(
-                  text: "Start Foreground Service",
-                  onPressed: every30Second,
-                  color: ColorManager.primary,
-                  isDisable: _position == null || !isFirstTime),
-              const SizedBox(
-                height: AppSize.s20,
-              ),
-              TestingBtn(
-                text: "Stop Foreground Service",
-                onPressed: handleEndLocation,
-                color: ColorManager.primary,
-                isDisable: isFirstTime,
-              ),
-              const SizedBox(
-                height: AppSize.s20,
-              ),
+
               TestingBtn(
                 text: text,
-                isDisable: _position == null,
                 onPressed: () async {
                   final service = FlutterBackgroundService();
                   var isRunning = await service.isRunning();

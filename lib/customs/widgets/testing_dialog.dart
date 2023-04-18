@@ -17,13 +17,7 @@ class TestingDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String text;
-    var msg = message.split(':');
-    if (msg.length == 1) {
-      text = msg[0];
-    } else {
-      text = msg[1];
-    }
+
     return Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -32,7 +26,7 @@ class TestingDialog extends StatelessWidget {
         backgroundColor: Colors.white,
         child: SizedBox(
           width: MediaQuery.of(context).size.width / 1.5,
-          height: 210,
+          height: 230,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
@@ -69,10 +63,10 @@ class TestingDialog extends StatelessWidget {
                 ),
                 Text(
                   type == Constants.error
-                      ? (text.length > 130 ? "Try Again" : text)
-                      : (text.length > 130
+                      ? (message.length > 130 ? "Try Again" : message)
+                      : (message.length > 130
                       ? "Congratulation, successful"
-                      : text),
+                      : message),
                   style: getRegularStyle(color: ColorManager.black),
                   textAlign: TextAlign.center,
                 ),
